@@ -42,7 +42,7 @@
       // Save node
       $.ajax({
         type: "POST",
-        url: Drupal.settings.basePath + 'aloha/save/node/' + nid,
+        url: Drupal.settings.basePath + 'node/' + nid + '/aloha/save',
         data: {body: html, lang: Drupal.settings.aloha.nodes[nid].lang},
         success: function(obj) {
           if (obj.status == 'saved') {

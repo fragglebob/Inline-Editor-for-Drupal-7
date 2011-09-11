@@ -1,38 +1,58 @@
-$(document).ready(function(){
-  GENTICS.Aloha.EventRegistry.subscribe(GENTICS.Aloha,"editableActivated",function(event,eventinfo){
-    aloha_focus_box(eventinfo.editable.getId());
-  });
-  GENTICS.Aloha.EventRegistry.subscribe(GENTICS.Aloha,"editableDeactivated",function(event,eventinfo){
-  
-    var id = eventinfo.editable.getId();
-    var nid = id.replace("aloha-","");
-    var html = $(id).html();
-    
-    aloha_unfocus_box(id);
-    
-    $.ajax({
-      type: "POST",
-      url: Drupal.settings.basePath + "aloha/save/node/" + nid,
-      data: ({ body: eventinfo.editable.getContents(), }),
-      success: function(msg){
-        aloha_display_saved(msg);
-      },
-    });
-  })
-  function aloha_display_saved(msg){
-    var obj = jQuery.parseJSON(msg);
-    if(obj.status == 'saved'){
-      $('#aloha-' + obj.nid + '-saved').show().delay(1300).fadeOut();
+(function($) {
+  Drupal.behaviors.alohaEditor = {
+    attach: function (context, settings) {
+      // Run only if aloha is required
+      if (settings.aloha) {
+        // Aloha settings
+        GENTICS.Aloha.settings = settings.aloha.alohaSettings;
+
+        for (nid in settings.aloha.nodes) {
+          // Retrieving container
+          var container = $('#aloha-container-' + nid);
+
+          // Setting up Aloha and events associated
+          container.aloha();
+          container.blur(function() {
+            var html = $(this).html();
+            if (settings.aloha.nodes[nid].html != html) {
+              Drupal.behaviors.alohaEditor.save(nid, html);
+              // Update HTML
+              settings.aloha.nodes[nid].html = html;
+            }
+            $(this).removeClass('aloha-edit');
+          });
+          container.focus(function() {
+            $(this).addClass('aloha-edit');
+          });
+
+          // Store HTML
+          settings.aloha.nodes[nid].html = container.html();
+
+          // Setting up exit event
+          $(window).unload(function() {
+            var html = $('#aloha-container-' + nid).html();
+            if (settings.aloha.nodes[nid].html != html) {
+              Drupal.behaviors.alohaEditor.save(nid, html);
+            }
+          });
+        }
+      }
+    },
+    save: function(nid, html) {
+      // Save node
+      $.ajax({
+        type: "POST",
+        url: Drupal.settings.basePath + 'aloha/save/node/' + nid,
+        data: {body: html, lang: Drupal.settings.aloha.nodes[nid].lang},
+        success: function(obj) {
+          if (obj.status == 'saved') {
+            var element = '<div class="aloha-status">' + Drupal.t('%title has been saved.', {'%title': obj.title}) + '</div>';
+            $(element).insertBefore($('#aloha-container-' + obj.nid)).delay(1300).fadeOut(function () {
+              $(this).remove();
+            });
+          }
+        }
+      });
     }
-  }
-  function aloha_focus_box(element){
-    $('#' + element).css({
-      background:"rgb(255,255,235)"
-    });
-  }
-  function aloha_unfocus_box(element){
-    $('#' + element).css({
-      background:"none"
-    });
-  }
-});
+  };
+}(jQuery));

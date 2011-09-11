@@ -1,6 +1,4 @@
 name = Aloha Editor
 description = Allows you to edit content, with the aloha editor, without going to the edit page.
-package = User Interface
+package = User interface
 core = 7.x
-
-scripts[] = aloha.js

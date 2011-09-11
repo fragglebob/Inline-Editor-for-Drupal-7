@@ -1,120 +1,121 @@
 <?php
 
-/**
- * @file
- * An inline editor for Drupal 7
- */
- 
-/**
- * Define the path to the aloha libary
- */
+// Define constants
 define('ALOHA_PATH', 'sites/all/libraries/aloha');
 
 /**
  * Implements hook_permission().
  */
-function aloha_permission(){
-	return array(
-		'use aloha' => array(
-			'title' => t('Use the aloha editor'),
-			'description' => t('Use the aloha editor to edit node content.')
-		));
+function aloha_permission() {
+  return array(
+    'use aloha' => array(
+      'title' => t('Use the aloha editor'),
+      'description' => t('Use the aloha editor to edit node content.')
+    ));
 }
+
 /**
  * Implements hook_node_view().
  */
 function aloha_node_view($node, $view_mode, $langcode) {
-    if($view_mode == 'full'){
-      global $base_path;
-      $path = ALOHA_PATH;
-      if(file_exists($path.'/aloha.js')) {
-	    if (user_access('use aloha') && node_access('update', $node)) {
-          static $aloha = NULL;
-          if (empty($aloha)) {
-            aloha_files($path);
-          }
-          $aloha = TRUE;	
-	    }
-	    
-        $id = 'aloha-'. $node->nid;
-	  
-        drupal_add_js('
-        $(document).ready(function(){ 
-	  	  orghtml' . $node->nid . ' = $("#' . $id . '").html();
-	  	  $("#' . $id . '").aloha();
-	  	});
-	  	', 'inline');
-        $node->content['body'][0]['#markup'] = '<div id="' . $id . '-saved" style="display: none;">' . $node->title . ' Has Been Saved.</div><div id="' . $id . '" class="aloha-editor">' . $node->content['body'][0]['#markup'] . '</div>';
-      } else {
-	    drupal_set_message(t('You need to download the !aloha and extract the entire contents of the archive into the %path folder of your server.', array('!aloha' => l(t('Aloha Editor'), 'http://www.aloha-editor.org/'), '%path' => $path)), 'warning', FALSE);
-      }
+  // Only enable in full view mode and check access
+  if ($view_mode == 'full' && user_access('use aloha') && node_access('update', $node)) {
+    if (_aloha_include_files()) {
+      // Pass the body language in settings
+      drupal_add_js(array('aloha' => array('nodes' => array($node->nid => array('lang' => $node->content['body']['#language'])))), 'setting');
+
+      // Add a wrapper
+      $node->content['body'][0]['#prefix'] = '<div id="aloha-container-' . $node->nid . '" class="aloha-editor">';
+      $node->content['body'][0]['#suffix'] = '</div>';
     }
+  }
 }
+
 /**
  * Implements hook_menu().
  */
 function aloha_menu() {
-  $items['aloha/save/node/%node'] = array(
+  $items['node/%node/aloha/save'] = array(
     'title' => 'Save node content',
     'page callback' => 'aloha_save_node',
-    'page arguments' => array(3),
+    'page arguments' => array(1),
     'access callback' => 'node_access',
-    'access arguments' => array('update', 3),
+    'access arguments' => array('update', 1),
     'type' => MENU_CALLBACK,
   );
   return $items;
 }
+
 /**
- * Helper function to add the required aloha assets.
+ * Helper function to add JS files and setings
  */
-function aloha_files($path){
-  global $base_url;
-  $jssettings = array('type' => 'file', 'group' => JS_LIBRARY);
-  drupal_add_js($path .'/aloha.js', $jssettings);
-  drupal_add_js($path .'/plugins/com.gentics.aloha.plugins.Format/plugin.js', $jssettings);
-  drupal_add_js($path .'/plugins/com.gentics.aloha.plugins.Table/plugin.js', $jssettings);
-  drupal_add_js($path .'/plugins/com.gentics.aloha.plugins.List/plugin.js', $jssettings);
-  drupal_add_js($path .'/plugins/com.gentics.aloha.plugins.Link/plugin.js', $jssettings);
-      	
-  drupal_add_css($path .'/aloha/css/aloha.css');
-      	
-  drupal_add_js("
-  GENTICS.Aloha.settings = {
-    logLevels: {
-      'error': true,
-      'warn': true,
-      'info': true,
-      'debug': false
-    },
-    errorhandling : false,
-    ribbon: false,
-    'i18n': {
-      'acceptLanguage': '" . $_SERVER['HTTP_ACCEPT_LANGUAGE'] . "'
-    },
-    'plugins': {
-      'com.gentics.aloha.plugins.Link': {
-       targetregex : '^(?!.*".$base_url.").*',
-       target : '_blank',
-       cssclassregex : '^(?!.*".$base_url.").*',
-       cssclass : 'external'
-      },
-      'com.gentics.aloha.plugins.Table': {
-         config: ['table']
-      }
+function _aloha_include_files() {
+  $included = &drupal_static(__FUNCTION__);
+  if (!$included) {
+    $path = ALOHA_PATH;
+    if (!file_exists($path . '/aloha.js')) {
+      // Display a message when aloha is not found
+      drupal_set_message(t('You need to download the !aloha and extract the entire contents of the archive into the %path folder of your server.', array('!aloha' => l(t('Aloha Editor'), 'http://www.aloha-editor.org/'), '%path' => $path)), 'warning', FALSE);
+      return FALSE;
     }
+    global $base_url;
+    $js_settings = array('preprocess' => false);
+    drupal_add_js($path . '/aloha.js', $js_settings);
+    drupal_add_js($path . '/plugins/com.gentics.aloha.plugins.Format/plugin.js', $js_settings);
+    drupal_add_js($path . '/plugins/com.gentics.aloha.plugins.Table/plugin.js', $js_settings);
+    drupal_add_js($path . '/plugins/com.gentics.aloha.plugins.List/plugin.js', $js_settings);
+    drupal_add_js($path . '/plugins/com.gentics.aloha.plugins.Link/plugin.js', $js_settings);
+    drupal_add_css($path . '/aloha/css/aloha.css');
+
+    // Module files
+    drupal_add_js(drupal_get_path('module', 'aloha') . '/aloha.js');
+    drupal_add_css(drupal_get_path('module', 'aloha') . '/aloha.css');
+
+    // Aloha Settings
+    $settings = array(
+      'logLevels' => array(
+        'error' => TRUE,
+        'warn' => TRUE,
+        'info' => FALSE,
+        'debug' => FALSE,
+      ),
+      'errorhandling' => FALSE,
+      'ribbon' => FALSE,
+      'i18n' => array(
+        'acceptLanguage' => $_SERVER['HTTP_ACCEPT_LANGUAGE']
+      ),
+      'plugins' => array(
+        'com.gentics.aloha.plugins.Link' => array(
+          'targetregex' => "^(?!.*" . $base_url . ").*",
+          'target' => '_blank',
+          'cssclassregex' => "^(?!.*" . $base_url . ").*",
+          'cssclass' => 'external',
+        ),
+        'com.gentics.aloha.plugins.Table' => array(
+          'config' => array('table'),
+        ),
+      ),
+    );
+    drupal_add_js(array('aloha' => array('alohaSettings' => $settings)), 'setting');
+    $included = TRUE;
   }
-  ", 'inline');
+  return TRUE;
 }
+
 /**
- * Function to save the nodes. Not to be confussed with the hook.
+ * AJaX Callback for saving node
+ *
+ * @param $node
  */
-function aloha_save_node($node){
-  $node->body[$node->language][0]['value'] = $_POST['body'];
-  $node->body[$node->language][0]['safe_value'] = $_POST['body'];
-  $node->body[$node->language][0][format] = 'full_html';
-  node_save($node);
-  $saved = array('status' => 'saved', 'nid' => $node->nid);
-  print json_encode($saved);
+function aloha_save_node($node) {
+  // Prevent direct access without POST
+  if (isset($_POST['body'])) {
+    $node->body[$_POST['lang']][0]['value'] = $_POST['body'];
+    node_save($node);
+    $saved = array('title' => $node->title, 'status' => 'saved', 'nid' => $node->nid);
+    return drupal_json_output($saved);
+  }
+  else {
+    drupal_json_output(FALSE);
+  }
 }
-/* End of file aloha.module */
-/* Location: ./sites/all/modules/aloha/aloha.module */

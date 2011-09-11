@@ -26,12 +26,12 @@ $(document).ready(function(){
     }
   }
   function aloha_focus_box(element){
-    $(element).css({
+    $('#' + element).css({
       background:"rgb(255,255,235)"
     });
   }
   function aloha_unfocus_box(element){
-    $(element).css({
+    $('#' + element).css({
       background:"none"
     });
   }

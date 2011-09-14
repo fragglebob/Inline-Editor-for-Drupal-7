@@ -18,25 +18,27 @@ function aloha_permission() {
  * Implements hook_field_attach_view_alter().
  */
 function aloha_field_attach_view_alter(&$output, $context) {
-  $id = &drupal_static(__FUNCTION__);
-  if (!$id) {
-    $id = 0;
-  }
-  if ($context['entity_type'] == 'node') {
-    if (isset($output['body']) && $output['body']['#formatter'] == 'text_default') {
-      if (_aloha_include_files()) {
-        // Pass the body language in settings
-        $setting = array(
-          '#aloha-container-' . $id => array(
-            'nid' => $context['entity']->nid,
-            'lang' => $output['body']['#language'],
-          )
-        );
-        drupal_add_js(array('aloha' => array('nodes' => $setting)), 'setting');
-        // Add a wrapper
-        $output['body'][0]['#prefix'] = '<div id="aloha-container-' . $id . '" class="aloha-editor">';
-        $output['body'][0]['#suffix'] = '</div>';
-        $id++;
+  if(user_access('use aloha') && node_access('update', $node)){
+    $id = &drupal_static(__FUNCTION__);
+    if (!$id) {
+      $id = 0;
+    }
+    if ($context['entity_type'] == 'node') {
+      if (isset($output['body']) && $output['body']['#formatter'] == 'text_default') {
+        if (_aloha_include_files()) {
+          // Pass the body language in settings
+          $setting = array(
+            '#aloha-container-' . $id => array(
+              'nid' => $context['entity']->nid,
+              'lang' => $output['body']['#language'],
+            )
+          );
+          drupal_add_js(array('aloha' => array('nodes' => $setting)), 'setting');
+          // Add a wrapper
+          $output['body'][0]['#prefix'] = '<div id="aloha-container-' . $id . '" class="aloha-editor">';
+          $output['body'][0]['#suffix'] = '</div>';
+          $id++;
+        }
       }
     }
   }
@@ -83,7 +85,7 @@ function _aloha_include_files() {
     drupal_add_css(drupal_get_path('module', 'aloha') . '/aloha.css');
     
     // Clean URLs on?
-    $cleanurls = strstr($_SERVER['REQUEST_URI'],'?q=') ? FALSE : TRUE;
+    $cleanurls = strstr($_SERVER['REQUEST_URI'], '?q=') ? FALSE : TRUE;
     drupal_add_js(array('aloha' => array('cleanurls' => $cleanurls)), 'setting');
     
     // Aloha Settings

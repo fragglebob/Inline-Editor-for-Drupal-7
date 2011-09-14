@@ -18,12 +18,12 @@ function aloha_permission() {
  * Implements hook_field_attach_view_alter().
  */
 function aloha_field_attach_view_alter(&$output, $context) {
-  if(user_access('use aloha') && node_access('update', $node)){
-    $id = &drupal_static(__FUNCTION__);
-    if (!$id) {
-      $id = 0;
-    }
-    if ($context['entity_type'] == 'node') {
+  $id = &drupal_static(__FUNCTION__);
+  if (!$id) {
+    $id = 0;
+  }
+  if ($context['entity_type'] == 'node') {
+    if(user_access('use aloha') && node_access('update', $context['entity'])){
       if (isset($output['body']) && $output['body']['#formatter'] == 'text_default') {
         if (_aloha_include_files()) {
           // Pass the body language in settings

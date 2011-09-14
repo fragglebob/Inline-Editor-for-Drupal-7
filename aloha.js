@@ -41,13 +41,10 @@
     save: function(id, html) {
       // Save node
       var body = Drupal.settings.aloha.nodes[id];
-      
-      if(Drupal.settings.aloha.cleanurls){
-        var cleanUrl = '';
-      } else {
-        var cleanUrl = '?q=';
-      }
-      
+
+      var cleanUrl = '';
+      if(!Drupal.settings.aloha.cleanurls){cleanUrl = '?q=';}
+
       $.ajax({
         type: "POST",
         url: Drupal.settings.basePath + cleanUrl + 'node/' + body.nid + '/aloha/save',

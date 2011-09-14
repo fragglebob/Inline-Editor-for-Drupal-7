@@ -83,11 +83,10 @@ function _aloha_include_files() {
     // Module files
     drupal_add_js(drupal_get_path('module', 'aloha') . '/aloha.js');
     drupal_add_css(drupal_get_path('module', 'aloha') . '/aloha.css');
-    
+
     // Clean URLs on?
-    $cleanurls = strstr($_SERVER['REQUEST_URI'], '?q=') ? FALSE : TRUE;
-    drupal_add_js(array('aloha' => array('cleanurls' => $cleanurls)), 'setting');
-    
+    drupal_add_js(array('aloha' => array('cleanurls' => variable_get('clean_url', FALSE);)), 'setting');
+
     // Aloha Settings
     $settings = array(
       'logLevels' => array(

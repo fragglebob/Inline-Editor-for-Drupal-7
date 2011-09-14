@@ -6,18 +6,18 @@
         // Aloha settings
         GENTICS.Aloha.settings = settings.aloha.alohaSettings;
 
-        for (nid in settings.aloha.nodes) {
+        for (id in settings.aloha.nodes) {
           // Retrieving container
-          var container = $('#aloha-container-' + nid);
+          var container = $(id);
 
           // Setting up Aloha and events associated
           container.aloha();
           container.blur(function() {
             var html = $(this).html();
-            if (settings.aloha.nodes[nid].html != html) {
-              Drupal.behaviors.alohaEditor.save(nid, html);
+            if (settings.aloha.nodes[id].html != html) {
+              Drupal.behaviors.alohaEditor.save(id, html);
               // Update HTML
-              settings.aloha.nodes[nid].html = html;
+              settings.aloha.nodes[id].html = html;
             }
             $(this).removeClass('aloha-edit');
           });
@@ -26,28 +26,36 @@
           });
 
           // Store HTML
-          settings.aloha.nodes[nid].html = container.html();
+          settings.aloha.nodes[id].html = container.html();
 
           // Setting up exit event
           $(window).unload(function() {
-            var html = $('#aloha-container-' + nid).html();
-            if (settings.aloha.nodes[nid].html != html) {
-              Drupal.behaviors.alohaEditor.save(nid, html);
+            var html = $('#aloha-container-' + id).html();
+            if (settings.aloha.nodes[id].html != html) {
+              Drupal.behaviors.alohaEditor.save(id, html);
             }
           });
         }
       }
     },
-    save: function(nid, html) {
+    save: function(id, html) {
       // Save node
+      var body = Drupal.settings.aloha.nodes[id];
+      
+      if(Drupal.settings.aloha.cleanurls){
+        var cleanUrl = '';
+      } else {
+        var cleanUrl = '?q=';
+      }
+      
       $.ajax({
         type: "POST",
-        url: Drupal.settings.basePath + 'node/' + nid + '/aloha/save',
-        data: {body: html, lang: Drupal.settings.aloha.nodes[nid].lang},
+        url: Drupal.settings.basePath + cleanUrl + 'node/' + body.nid + '/aloha/save',
+        data: {body: html, lang: body.lang},
         success: function(obj) {
           if (obj.status == 'saved') {
             var element = '<div class="aloha-status">' + Drupal.t('%title has been saved.', {'%title': obj.title}) + '</div>';
-            $(element).insertBefore($('#aloha-container-' + obj.nid)).delay(1300).fadeOut(function () {
+            $(element).insertBefore($(id)).delay(1300).fadeOut(function () {
               $(this).remove();
             });
           }

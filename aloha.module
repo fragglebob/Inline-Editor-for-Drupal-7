@@ -85,7 +85,7 @@ function _aloha_include_files() {
     drupal_add_css(drupal_get_path('module', 'aloha') . '/aloha.css');
 
     // Clean URLs on?
-    drupal_add_js(array('aloha' => array('cleanurls' => variable_get('clean_url', FALSE);)), 'setting');
+    drupal_add_js(array('aloha' => array('cleanurls' => variable_get('clean_url', FALSE))), 'setting');
 
     // Aloha Settings
     $settings = array(
